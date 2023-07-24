@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ToDo App</title>
+    <style>
+        body{
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+            margin: 20px;
+            background-color: rgb(227, 248, 186);
+        }
+        h1 {
+            text-align: center;
+        }
+        #taskInput {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+        }
+        #taskList{
+            list-style-type: none;
+            padding: 0;
+        }
+        .task {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            border: 1px solid rgb(96, 6, 6);
+            margin-bottom: 5px;
+            background-color: rgb(255, 169, 252);            
+        }
+        .task input [type="checkbox"]{
+            margin-right: 10px;
+        }
+        .task button {
+            background-color: rgb(251, 235, 213);
+            color: rgb(7, 7, 132);
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1> ToDo App</h1>
+    <input type="text" id="taskInput" placeholder="Enter a new task">
+    <ul id="taskList"></ul>
+
+    <script>
+        // Get references to HTML elements
+        const taskInput = document.getElementById("taskInput");
+        const taskList = document.getElementById("taskList");
+
+        //function to add a task
+        function addTask(taskText) {
+            const taskItem = document.createElement("li");
+            taskItem.classList.add("task");
+
+            const taskCheckbox = document.createElement("input");
+            taskCheckbox.type = "checkbox";
+            taskCheckbox.addEventListener("change", toggleTaskStatus);
+
+            const taskTextElement = document.createElement("span");
+            taskTextElement.innerText = taskText;
+
+            const deleteButton = document.createElement("button");
+            deleteButton.innerText = "Delete";
+            deleteButton.addEventListener("click", removeTask);
+
+            taskItem.appendChild(taskCheckbox);
+            taskItem.appendChild(taskTextElement);
+            taskItem.appendChild(deleteButton);
+            taskList.appendChild(taskItem);
+        }
+
+        //function to save tasks to local storage
+        function saveTasksToLocalStorage(){
+            const tasks = [];
+            const taskItems = document.querySelectorAll(".task");
+
+            taskItems.forEach((taskItem) => {
+                const taskText = taskItem.querySelector("span").innerText;
+                const isCompleted = taskItem.querySelector("input[type='checkbox']").checked;
+                tasks.push({text: taskText, completed: isCompleted});
+            })
+
+            localStorage.setItem("tasks", JSON.stringify(tasks));
+            }
+
+        // functions to load tasks from local storage
+        function loadTasksFromLocalStorage() {
+            const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+
+            tasks.forEach((task) => {
+                addTask(task.text);
+                const taskItem = taskList.lastChild;
+                if (task.completed) {
+                    taskItem.querySelector("input[type='checkbox']").checked = true;                    
+                }
+            });
+        }
+
+        //function to toggle task status (completed or not)
+        function toggleTaskStatus(event) {
+            const taskItem = event.target.parentElement;
+            taskItem.classList.toggle("completed");
+            saveTasksToLocalStorage();
+        }
+
+        //function to remove a task
+        function removeTask(event) {
+            const taskItem = event.target.parentElement;
+            taskItem.remove();
+            saveTasksToLocalStorage();
+        }
+
+        //Event listener for adding a new task
+        taskInput.addEventListener("keypress", function (event) {
+            if (event.key === "Enter" && taskInput.value.trim() !=="") {
+                addTask (taskInput.value.trim());
+                taskInput.value = "";
+                saveTasksToLocalStorage();
+            }
+        });
+
+        function makeTaskEditable(taskItem) {
+            taskItem.classList.add("editing");
+
+        const taskTextElement = taskItem.querySelector("span");
+        const taskTextInput = document.createElement("input");
+        taskTextInput.type = "text";
+        taskTextInput.value = taskTextElement.innerText;
+        taskTextInput.addEventListener("blur", saveEditedTask);
+        taskTextInput.addEventListener("keypress", function (event) {
+            if (event.key === "Enter"){
+                saveEditedTask(event);
+            }
+        });
+
+        taskItem.appendChild(taskTextInput);
+        taskTextInput.focus();
+        }
+
+        //function to save the edited task
+        function saveEditedTask(event) {
+            const taskItem = event.target.parentElement;
+            const taskTextElement = taskItem.querySelector("span");
+            const taskTextInput = taskItem.querySelector("input[type='text']");
+            const newTaskText = taskTextInput.value.trim();
+
+            if (newTaskText !== ""){
+                taskTextElement.innerText = newTaskText;
+                taskItem.classList.remove("editing");
+                saveTasksToLocalStorage();
+            }   else {
+                removeTask(event);
+            }
+        }
+
+        // Event Listener for clicking on a task to edit
+        taskList.addEventListener("click", function (event){
+            const target = event.target;
+            if (target.tagName === "SPAN") {
+                const taskItem = target.parentElement;
+                makeTaskEditable(taskItem);
+            }
+        });
+
+        // Load tasks from Local Storage on page load
+        loadTasksFromLocalStorage();       
+    </script>
+</body>
+</html>
+
